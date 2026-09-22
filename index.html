@@ -165,7 +165,7 @@ $("sendResetBtn").onclick=async()=>{
   }
   $("resetMsg").className="muted";
   $("resetMsg").textContent="Sending reset link...";
-  const redirectTo=location.origin+location.pathname;
+  const redirectTo="https://ap1684544-blip.github.io/parth-bone-tooth-clinic-admin/";
   const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
   if(error){$("resetMsg").className="error";$("resetMsg").textContent=error.message;return;}
   $("resetMsg").className="success";
@@ -186,9 +186,20 @@ $("updatePasswordBtn").onclick=async()=>{
   setTimeout(()=>{showLogin();},1200);
 };
 
-db.auth.onAuthStateChange((event)=>{
-  if(event==="PASSWORD_RECOVERY") showNewPassword();
+// Handle Supabase password-recovery redirects reliably.
+// Register this listener before checking the current session so the recovery
+// event cannot be missed during page startup.
+db.auth.onAuthStateChange((event, session)=>{
+  if(event === "PASSWORD_RECOVERY") {
+    showNewPassword();
+  }
 });
+
+function isRecoveryUrl(){
+  const raw = (location.hash || "") + "&" + (location.search || "");
+  return /type(?:%3D|=)recovery/i.test(raw) || /access_token=/i.test(raw) || /refresh_token=/i.test(raw);
+}
+
 
 async function loadAppointments(){
   $("loadMsg").textContent="Loading appointments...";
@@ -251,12 +262,23 @@ async function setStatus(id,status){
 ["search","doctorFilter","dateFilter","statusFilter"].forEach(id=>$(id).addEventListener("input",render));
 
 (async()=>{
-  const hash=location.hash||"";
-  const isRecovery=hash.includes("type=recovery") || hash.includes("type%3Drecovery");
+  // Do not let the normal login/session check overwrite the recovery screen.
+  if(isRecoveryUrl()){
+    showNewPassword();
+    return;
+  }
+
   const {data}=await db.auth.getSession();
-  if(isRecovery){ showNewPassword(); return; }
   if(data.session) showDashboard(); else showLogin();
 })();
 </script>
+<script>
+// Extra startup fallback: if the recovery URL is present, keep the reset form visible.
+// This runs independently of the normal login screen.
+if(isRecoveryUrl()){
+  setTimeout(()=>showNewPassword(), 50);
+}
+</script>
+
 </body>
 </html>
