@@ -165,7 +165,7 @@ $("sendResetBtn").onclick=async()=>{
   }
   $("resetMsg").className="muted";
   $("resetMsg").textContent="Sending reset link...";
-  const redirectTo="https://ap1684544-blip.github.io/parth-bone-tooth-clinic-admin/";
+  const redirectTo=location.origin+location.pathname;
   const {error}=await db.auth.resetPasswordForEmail(email,{redirectTo});
   if(error){$("resetMsg").className="error";$("resetMsg").textContent=error.message;return;}
   $("resetMsg").className="success";
@@ -186,20 +186,9 @@ $("updatePasswordBtn").onclick=async()=>{
   setTimeout(()=>{showLogin();},1200);
 };
 
-// Handle Supabase password-recovery redirects reliably.
-// Register this listener before checking the current session so the recovery
-// event cannot be missed during page startup.
-db.auth.onAuthStateChange((event, session)=>{
-  if(event === "PASSWORD_RECOVERY") {
-    showNewPassword();
-  }
+db.auth.onAuthStateChange((event)=>{
+  if(event==="PASSWORD_RECOVERY") showNewPassword();
 });
-
-function isRecoveryUrl(){
-  const raw = (location.hash || "") + "&" + (location.search || "");
-  return /type(?:%3D|=)recovery/i.test(raw) || /access_token=/i.test(raw) || /refresh_token=/i.test(raw);
-}
-
 
 async function loadAppointments(){
   $("loadMsg").textContent="Loading appointments...";
@@ -246,11 +235,30 @@ function render(){
       <td>${esc(a.payment_status)}</td>
       <td><span class="status">${esc(a.appointment_status||"pending")}</span></td>
       <td class="actions">
+        <button style="background:#0b6fb8;color:#fff" onclick="viewDetails('${esc(a.id)}')">View Details</button>
         <button class="confirm" onclick="setStatus('${esc(a.id)}','confirmed')">Confirm</button>
         <button class="cancel" onclick="setStatus('${esc(a.id)}','cancelled')">Cancel</button>
         <button class="complete" onclick="setStatus('${esc(a.id)}','completed')">Complete</button>
       </td>
     </tr>`).join("") || '<tr><td colspan="10">No appointments found.</td></tr>';
+}
+
+function viewDetails(id){
+  const a=appointments.find(x=>x.id===id);
+  if(!a) return;
+  const details = [
+    ['Appointment ID',a.appointment_id],['Patient',a.patient_name],['Phone',a.phone],
+    ['Age / Gender',`${a.age ?? ''} / ${a.gender ?? ''}`],['Doctor',a.doctor],
+    ['Consultation',a.consultation],['Date',a.appointment_date],['Time',a.appointment_time],
+    ['Fee',`₹${a.consultation_fee ?? ''}`],['Payment',a.payment_status],
+    ['Status',a.appointment_status || 'pending'],['Reason',a.reason || '—'],
+    ['Booked At',a.created_at ? new Date(a.created_at).toLocaleString() : '—']
+  ];
+  const html=details.map(([k,v])=>`<div style="display:grid;grid-template-columns:130px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #eee"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('');
+  const wrap=document.createElement('div');
+  wrap.style='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999';
+  wrap.innerHTML=`<div style="background:#fff;max-width:620px;width:100%;max-height:90vh;overflow:auto;border-radius:14px;padding:22px;box-shadow:0 10px 40px rgba(0,0,0,.3)"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2 style="margin:0">📋 Appointment Details</h2><button style="background:#eee;padding:8px 12px" onclick="this.closest('div[style*=fixed]').remove()">✕</button></div><div style="margin-top:15px">${html}</div></div>`;
+  document.body.appendChild(wrap);
 }
 
 async function setStatus(id,status){
@@ -262,23 +270,12 @@ async function setStatus(id,status){
 ["search","doctorFilter","dateFilter","statusFilter"].forEach(id=>$(id).addEventListener("input",render));
 
 (async()=>{
-  // Do not let the normal login/session check overwrite the recovery screen.
-  if(isRecoveryUrl()){
-    showNewPassword();
-    return;
-  }
-
+  const hash=location.hash||"";
+  const isRecovery=hash.includes("type=recovery") || hash.includes("type%3Drecovery");
   const {data}=await db.auth.getSession();
+  if(isRecovery){ showNewPassword(); return; }
   if(data.session) showDashboard(); else showLogin();
 })();
 </script>
-<script>
-// Extra startup fallback: if the recovery URL is present, keep the reset form visible.
-// This runs independently of the normal login screen.
-if(isRecoveryUrl()){
-  setTimeout(()=>showNewPassword(), 50);
-}
-</script>
-
 </body>
 </html>
