@@ -247,12 +247,26 @@ function viewDetails(id){
   const a=appointments.find(x=>x.id===id);
   if(!a) return;
   const details = [
-    ['Appointment ID',a.appointment_id],['Patient',a.patient_name],['Phone',a.phone],
-    ['Age / Gender',`${a.age ?? ''} / ${a.gender ?? ''}`],['Doctor',a.doctor],
-    ['Consultation',a.consultation],['Date',a.appointment_date],['Time',a.appointment_time],
-    ['Fee',`₹${a.consultation_fee ?? ''}`],['Payment',a.payment_status],
-    ['Status',a.appointment_status || 'pending'],['Reason',a.reason || '—'],
-    ['Booked At',a.created_at ? new Date(a.created_at).toLocaleString() : '—']
+  ['Appointment ID', a.appointment_id],
+  ['Patient', a.patient_name],
+  ['Phone', a.phone],
+  ['Age / Gender', `${a.age ?? '-'} / ${a.gender ?? '-'}`],
+  ['Doctor', a.doctor],
+  ['Consultation', a.consultation],
+  ['Date', a.appointment_date],
+  ['Time', a.appointment_time],
+  ['Fee', `₹${a.consultation_fee ?? '-'}`],
+
+  ['Payment Status', a.payment_status === 'paid' ? 'Razorpay payment verified' : (a.payment_status || '-')],
+  ['Payment Amount', a.payment_amount ? `₹${a.payment_amount / 100}` : '-'],
+  ['Payment Gateway', a.payment_gateway || '-'],
+  ['Razorpay Payment ID', a.razorpay_payment_id || '-'],
+  ['Payment Verified At', a.payment_verified_at ? new Date(a.payment_verified_at).toLocaleString() : '-'],
+
+  ['Status', a.appointment_status || 'pending'],
+  ['Reason', a.reason || '-'],
+  ['Booked At', a.created_at ? new Date(a.created_at).toLocaleString() : '-']
+];
   ];
   const html=details.map(([k,v])=>`<div style="display:grid;grid-template-columns:130px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #eee"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('');
   const wrap=document.createElement('div');
