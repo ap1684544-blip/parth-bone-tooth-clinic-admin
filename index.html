@@ -267,7 +267,6 @@ function viewDetails(id){
   ['Reason', a.reason || '-'],
   ['Booked At', a.created_at ? new Date(a.created_at).toLocaleString() : '-']
 ];
-  ];
   const html=details.map(([k,v])=>`<div style="display:grid;grid-template-columns:130px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #eee"><b>${esc(k)}</b><span>${esc(v)}</span></div>`).join('');
   const wrap=document.createElement('div');
   wrap.style='position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:9999';
