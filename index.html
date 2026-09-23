@@ -236,9 +236,13 @@ function render(){
       <td><span class="status">${esc(a.appointment_status||"pending")}</span></td>
       <td class="actions">
         <button style="background:#0b6fb8;color:#fff" onclick="viewDetails('${esc(a.id)}')">View Details</button>
-        <button class="confirm" onclick="setStatus('${esc(a.id)}','confirmed')">Confirm</button>
-        <button class="cancel" onclick="setStatus('${esc(a.id)}','cancelled')">Cancel</button>
-        <button class="complete" onclick="setStatus('${esc(a.id)}','completed')">Complete</button>
+       ${(a.appointment_status || "pending") === "pending"
+  ? `<button class="confirm" onclick="setStatus('${esc(a.id)}','confirmed')">Confirm</button>
+     <button class="cancel" onclick="setStatus('${esc(a.id)}','cancelled')">Cancel</button>`
+  : (a.appointment_status === "confirmed"
+    ? `<button class="complete" onclick="setStatus('${esc(a.id)}','completed')">Complete</button>
+       <button class="cancel" onclick="setStatus('${esc(a.id)}','cancelled')">Cancel</button>`
+    : `<span class="status">${esc(a.appointment_status || "pending")}</span>`)}
       </td>
     </tr>`).join("") || '<tr><td colspan="10">No appointments found.</td></tr>';
 }
